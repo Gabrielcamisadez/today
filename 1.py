@@ -1,6 +1,7 @@
 from config import NETBOX_TOKEN, NETBOX_URL, NETBOX_HEADERS, GLPI_TOKEN, GLPI_URL, GLPI_SESSION_TOKEN, GLPI_HEADERS
 import json
 import urllib3
+import rich
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -74,12 +75,13 @@ class GLPI():
         if isinstance(response, dict):
             response.pop("links", None)
             print(json.dumps(response, indent=4))
+
             return
         
         if isinstance(response, list):
             for device in response:
                 device.pop("links", None)
-                print(json.dumps(device, indent=4))
+                rich.print_json(json.dumps(device, indent=4))
 
         return response
 
@@ -191,10 +193,10 @@ n = Netbox()
 # ================================
 
 g = GLPI()
-# g.get_device()
+g.get_device()
 # g.get_device_location()
 # g.get_device_name()
 # g.get_device_type()
 # g.data_to_netbox()
 # g.data_to_netbox()
-g.send_to_netbox()
+# g.send_to_netbox()
