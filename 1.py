@@ -166,22 +166,21 @@ class GLPI():
                 device.pop("groups_id_tech", None)
                 device.pop("networks_id", None)
                 to_netbox.append(device)
+                continue
 
         print(json.dumps(to_netbox, indent=4))
-        return to_netbox
-    
-    
+
+        
+        
+
+
     def send_to_netbox(self):
         import requests
-        to_netbox = self.data_to_netbox()
-        for device in to_netbox:
-            r1 = requests.post(NETBOX_URL, headers=NETBOX_HEADERS, data=json.dumps(device), verify=False)
-            print(r1.status_code)
-            print(r1.headers)
-            print(r1.request.headers)
-            print(r1.request.body)
-            print("====================================")
-            print("====================================")
+        data = {
+            "name": "Teste"
+        }
+        r1 = requests.post(url="https://srvnetboxdsv-trf1.trf1.gov.br/api/dcim/devices", headers=NETBOX_HEADERS, json=data, verify=False)
+        print(r1.status_code)
         
         
 
@@ -196,5 +195,6 @@ g = GLPI()
 # g.get_device_location()
 # g.get_device_name()
 # g.get_device_type()
+# g.data_to_netbox()
 # g.data_to_netbox()
 g.send_to_netbox()
