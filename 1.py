@@ -1,202 +1,122 @@
-from config import NETBOX_TOKEN, NETBOX_URL, NETBOX_HEADERS, GLPI_TOKEN, GLPI_URL, GLPI_SESSION_TOKEN, GLPI_HEADERS
 import json
 import urllib3
+import requests
 import rich
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+urllib3.disable_warnings()
 
 
+# ========================================================================
+#                             Netbox
+# ========================================================================
 
+NETBOX_TOKEN = "1ec53d4afb6b10cd085586b44b37e985760140ce"
 
-# ======================================================================
-# --- NETBOX   
-# ======================================================================
-
+netbox_headers = {
+    "Authorization": f"Token {NETBOX_TOKEN}",
+    "Content-Type": "application/json"
+}
+   
 class Netbox():
     def __init__(self):
-        self.domain = "https://srvnetboxdsv-trf1.trf1.gov.br/api/dcim/devices"
-        self.token = NETBOX_TOKEN
-        self.headers = {
-            "Authorization": f"Token {self.token}",
-            "Content-Type": "application/json",
-        }
-            
-       
+        self.domain = "http://localhost:8000/api/dcim/devices"
+        self.ip = "127.0.0.1"
 
-    def get_device(self):
-        import requests
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
-        
-        try:
-            response = r1.json()
-        except:
-            print("format", r1.text)
-            return
+    def get_device(self):           
+        r1 = requests.get(self.domain, headers=netbox_headers, verify=False)
+        response = r1.json()
 
-        if isinstance(response, dict) and "data" in response:
-            response = response["data"]
-        elif not isinstance(response, list):
-            print("Error", response)
-            return    
-            
-        for device in response:
-            if isinstance(device, dict):
-                device.pop("links", None)    
-        return response            
+        if isinstance(response, dict):
+            rich.print(json.dumps(response, indent=4))
+
+        if isinstance(response, list):
+            rich.print(json.dumps(response, indent=4))
+
+    
+    def get_device_name(self):
+        r1 = requests.get(self.domain, headers=netbox_headers, verify=False)
+        response = r1.json()
+
+        for device in response['results']:
+            rich.print(json.dumps(device['name'], indent=4))
+
+    
+    def get_device_role_name(self):
+        r1 = requests.get(self.domain, headers=netbox_headers, verify=False)
+        response = r1.json()
+
+        for device in response['results']:
+            rich.print(f"\t\n{device['role']['name']}")
+            rich.print(f"{device['role']['id']}")
+
+    
+    def get_device_site(self):
+        r1 = requests.get(self.domain, headers=netbox_headers, verify=False)
+        response = r1.json()
+
+        for device in response['results']:
+            rich.print(f"\t\n{device['site']['name']}")
+            rich.print(f"{device['site']['id']}")
 
 
-# ======================================================================
-# --- GLPI
-# ======================================================================
 
-class GLPI():
+# ========================================================================
+#                             Glpi
+# ========================================================================
+
+GLPI_TOKEN = "ltUAk7vrdlavcCoXWBAHze6rIeTexMblGuUevUMO"
+
+glpi_headers = {
+    "Authorization": "Basic Z2xwaTpnbHBp",
+    "Content-Type": "application/json",
+    "App-Token": GLPI_TOKEN,
+    "Session-Token": "670d8eb03a46b78c82aaf26005df88ce"
+}
+
+class Glpi():
     def __init__(self):
-        self.domain = GLPI_URL
-        self.headers = {
-            "App-Token": GLPI_TOKEN,
-            "Content-Type": "application/json",
-            "Session-Token": GLPI_SESSION_TOKEN,
-            "Authorization": "Basic Z2xwaTpnbHBp"
-        }
-        
+        self.domain = "http://localhost:8080/apirest.php/Computer"
+        self.ip = "127.0.0.1"
 
-    def get_init_session_token(self):
-        import requests
-        init_url = "http://localhost:9090/apirest.php/initSession"
-        r1 = requests.get(init_url, headers=self.headers, verify=False)
+    def get_session_token(self):
+        r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
         print(r1.text)
 
 
     def get_device(self):
-        import requests
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
-        response = r1.json()
-        
-        if isinstance(response, dict):
-            response.pop("links", None)
-            print(json.dumps(response, indent=4))
-
-            return
-        
-        if isinstance(response, list):
-            for device in response:
-                device.pop("links", None)
-                rich.print_json(json.dumps(device, indent=4))
-
-        return response
-
-
-    def get_device_name(self):
-        import requests
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
-        response = r1.json()
-        
-        if isinstance(response, dict):
-            print(response["name"])
-            return
-        
-        if isinstance(response, list):
-            for device in response:
-                print(device.get("name"))
-        
-     
-    def get_device_type(self):
-        import requests
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
-        try :
-            response = r1.json()
-        except:
-            print("format", r1.text)
-            return
-        
-        if isinstance(response, dict):
-            print(response.get("computertypes_id"))
-            return
-      
-        if isinstance(response, list):
-            for device in response:
-                print(device.get("computertypes_id"))
-
-    
-    def get_device_location(self):
-        import requests
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
-        try:
-            response = r1.json()
-        except:
-            print("format", r1.text)
-            return
-        
-        if isinstance(response, dict):
-            print(response.get("locations_id"))
-            return
-        
-        if isinstance(response, list):
-            for device in response:
-                print(device.get("locations_id"))
-
-# ================================
-
-    def data_to_netbox(self):
-        import requests
-        to_netbox = []
-        r1 = requests.get(self.domain, headers=self.headers, verify=False)
+        r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
         response = r1.json()
 
-        if isinstance(response, dict):
-            response = [response]
-
-        if isinstance(response, list):
-            for device in response:
-                device.pop("links", None)
-                device.pop("id", None)
-                device.pop("contact_num", None)
-                device.pop("entities_id", None)
-                device.pop("otherserial", None)
-                device.pop("is_deleted", None)
-                device.pop("ticket_tco", None)
-                device.pop("is_recursive", None)
-                device.pop("states_id", None)
-                device.pop("users_id", None)
-                device.pop("users_id_tech", None)
-                device.pop("autoupdatesystems_id", None)
-                device.pop("is_dynamic", None)
-                device.pop("last_boot", None)
-                device.pop("template_name", None)
-                device.pop("is_template", None)
-                device.pop("last_inventory_update", None)
-                device.pop("groups_id_tech", None)
-                device.pop("networks_id", None)
-                to_netbox.append(device)
-                continue
-
-        print(json.dumps(to_netbox, indent=4))
-
-        
-        
+        for device in response:
+            device.pop('links')
+            rich.print(device)
 
 
-    def send_to_netbox(self):
-        import requests
-        data = {
-            "name": "Teste"
-        }
-        r1 = requests.post(url="https://srvnetboxdsv-trf1.trf1.gov.br/api/dcim/devices", headers=NETBOX_HEADERS, json=data, verify=False)
-        print(r1.status_code)
-        
-        
+    computertype_map = {
+        0: "Desktop",
+        1: "Server",
+        2: "VM"
+    }            
+
+    def get_computer_type(self):
+        r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
+        response = r1.json()
+
+        for device in response:
+            device.pop('links')
+            if device['computertypes_id'] in self.computertype_map:
+                rich.print(f"\t{device['computertypes_id']}")
+                rich.print(f"\t{self.computertype_map[device['computertypes_id']]}")
 
 
+
+
+g = Glpi()
+# g.get_device()
+g.get_computer_type()
+# ========================================================================
 n = Netbox()
 # n.get_device()
-
-# ================================
-
-g = GLPI()
-g.get_device()
-# g.get_device_location()
-# g.get_device_name()
-# g.get_device_type()
-# g.data_to_netbox()
-# g.data_to_netbox()
-# g.send_to_netbox()
+# n.get_device_name()
+# n.get_device_role_name()
+# n.get_device_site()
