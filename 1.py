@@ -2,6 +2,7 @@ import json
 import urllib3
 import requests
 import rich
+from config import NETBOX_URL, GLPI_URL
 
 urllib3.disable_warnings()
 
@@ -10,7 +11,7 @@ urllib3.disable_warnings()
 #                             Netbox
 # ========================================================================
 
-NETBOX_TOKEN = "1ec53d4afb6b10cd085586b44b37e985760140ce"
+NETBOX_TOKEN = "b6d1d226d2ef35b4bf1dd0cdc98a1851d16d4475"
 
 netbox_headers = {
     "Authorization": f"Token {NETBOX_TOKEN}",
@@ -64,18 +65,19 @@ class Netbox():
 #                             Glpi
 # ========================================================================
 
-GLPI_TOKEN = "ltUAk7vrdlavcCoXWBAHze6rIeTexMblGuUevUMO"
+GLPI_TOKEN = "nj5iOfzdC74IwSs8c1i4BZdj02ABi6DKVQH3Ep8y"
 
 glpi_headers = {
     "Authorization": "Basic Z2xwaTpnbHBp",
     "Content-Type": "application/json",
     "App-Token": GLPI_TOKEN,
-    "Session-Token": "670d8eb03a46b78c82aaf26005df88ce"
+    "Session-Token": "8f32144f76e71b0ca378c2dd42501855",
+    "Range": "0-9"   
 }
 
 class Glpi():
     def __init__(self):
-        self.domain = "http://localhost:8080/apirest.php/Computer"
+        self.domain = "http://localhost:9090/apirest.php/Computer"
         self.ip = "127.0.0.1"
 
     def get_session_token(self):
@@ -87,17 +89,46 @@ class Glpi():
         r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
         response = r1.json()
 
+        if isinstance(response, dict):
+            rich.print(json.dumps(response, indent=4))
+
+        if isinstance(response, list):
+            for device in response:
+                device.pop('links')
+                rich.print(device)
+
+    def get_all_devices(self):
+        r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
+        response = r1.json()
+
         for device in response:
             device.pop('links')
-            rich.print(device)
+            rich.print(device.get('id'))
+
+    def map_infos(self):
+        r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
+        response = r1.json()
+        netbox_data = [{
+
+        }]
+
+        for device in response [:3]:
+            device.pop('links')
+            netbox_data.append({
+                "id": device.get('id'),
+                "name": device.get('name'),
+                "device_type": device.get('computertypes_id'),
+                "site": device.get('locations_id'),
+                "role": device.get('computertypes_id')
+            })
+
+            rich.print(netbox_data)
 
 
-    computertype_map = {
-        0: "Desktop",
-        1: "Server",
-        2: "VM"
-    }            
 
+
+
+            
     def get_computer_type(self):
         r1 = requests.get(self.domain, headers=glpi_headers, verify=False)
         response = r1.json()
@@ -110,10 +141,12 @@ class Glpi():
 
 
 
-
 g = Glpi()
 # g.get_device()
-g.get_computer_type()
+g.map_infos()
+# g.get_all_devices()
+# g.get_session_token()
+# g.get_computer_type()
 # ========================================================================
 n = Netbox()
 # n.get_device()
